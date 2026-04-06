@@ -17,13 +17,19 @@
       position: fixed;
       top: 0;
       width: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.5);
       color: white;
       display: flex;
       justify-content: space-between;
-      padding: 10px 20px;
+      align-items: center;
+      padding: 15px 30px;
+      font-size: 20px;
+      z-index: 1000;
       box-sizing: border-box;
-      font-size: 18px;
+      flex-wrap: wrap;
+    }
+    #ui > div:last-child {
+      margin-right: 8px; 
     }
     #title {
       text-align: center;
@@ -31,15 +37,15 @@
       top: 50px;
       width: 100%;
       color: #333;
-      text-shadow: 1px 1px 4px black;
       text-shadow:
-      0 0 5px #fff,
-      0 0 10px #ffb3c6,
-      0 0 20px #bde0fe;
+        0 0 5px #fff,
+        0 0 10px #ffb3c6,
+        0 0 20px #bde0fe;
+      z-index: 1001; /* above flashlight */
     }
     .object {
       position: absolute;
-      font-size: 70px;
+      font-size: 60px;
       cursor: pointer;
     }
     .hiddenEgg {
@@ -55,7 +61,45 @@
       opacity: 1;
       pointer-events: auto;
     }
-
+    #flashlight {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      display: none;
+      z-index: 500;
+      background: radial-gradient(circle 120px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+    }
+    #winScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-size: 30px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    .hiddenEgg {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .object:hover .hiddenEgg {
+      opacity: 1;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -65,60 +109,168 @@
   <div>Level: <span id="level">1</span></div>
 </div>
 
-<h1 id="title">Find the Hidden Easter Egg</h1>
+<h1 id="title">
+  <img src="images/easter-egg.png" 
+       alt="Easter Egg" 
+       style="width:40px; height:40px; vertical-align:middle; margin-right:10px; position: relative; top: -4px;">
+  Find the Easter Egg
+</h1>
 
-<div class="object" style="top:200px; left:200px;">
-  🪑
-  <div class="hiddenEgg">🥚</div>
+<div id="flashlight"></div>
+
+<div id="winScreen">
+  <div>🏆 You Win!</div>
+  <button onclick="restartGame()">Play Again</button>
 </div>
 
-<div class="object" style="top:400px; left:500px;">🪵</div>
-<div class="object" style="top:300px; left:800px;">🪑</div>
-<div class="object" style="top:500px; left:900px;">🌳</div>
-
 <script>
-  const timeDisplay = document.getElementById("time");
-  const levelDisplay = document.getElementById("level");
+const timeDisplay = document.getElementById("time");
+const levelDisplay = document.getElementById("level");
+const flashlight = document.getElementById("flashlight");
+const winScreen = document.getElementById("winScreen");
+const title = document.getElementById("title");
 
-  let startTime = Date.now();
-  let level = 1;
+let startTime = Date.now();
+let level = 1;
+let realEgg = null;
+let gameOver = false;
 
-  let realEgg = document.querySelector(".hiddenEgg");
+setInterval(() => {
+  let t = ((Date.now() - startTime) / 1000).toFixed(1);
+  timeDisplay.textContent = t;
+}, 100);
 
-  setInterval(() => {
-    let t = ((Date.now() - startTime) / 1000).toFixed(1);
-    timeDisplay.textContent = t;
-  }, 100);
+const levelObjects = {
+  1: ["🪑", "🪵"],
+  2: ["🪑", "🪵", "🌳", "🐇"],
+  3: ["🪑", "🪵", "🌳", "🐇", "🦗", "🛝", "🌳", "🪑"]
+};
 
-  function setupEgg() {
-    realEgg.onclick = () => {
-      let time = ((Date.now() - startTime) / 1000).toFixed(2);
-      alert("🎉 You found it in " + time + " seconds!");
+const topMargin = 120;
+const bottomMargin = 50;
+const leftMargin = 20;
+const rightMargin = 20;
+const objectSize = 100;
 
-      level++;
-      levelDisplay.textContent = level;
-      startTime = Date.now();
+function loadLevel() {
+  document.querySelectorAll(".object").forEach(o => o.remove());
 
-      moveEgg();
-    };
+  let objects = levelObjects[level];
+  if(level === 3){
+    document.body.style.backgroundColor = "#000";
+    document.body.style.backgroundImage = "none";
+    flashlight.style.display = "block";
+    title.style.color = "#fff";
+    title.style.textShadow = `
+        0 0 5px #fff,
+        0 0 10px #fff,
+        0 0 20px #ffb3c6
+    `;
+  } else {
+    document.body.style.backgroundColor = "#fdf6e3";
+    document.body.style.backgroundImage = `radial-gradient(#ffd6e0 10%, transparent 11%),
+                                          radial-gradient(#bae1ff 10%, transparent 11%),
+                                          radial-gradient(#caffbf 10%, transparent 11%)`;
+    document.body.style.backgroundSize = "60px 60px";
+    flashlight.style.display = "none";
+
+    title.style.color = "#333";
+    title.style.textShadow = `
+        0 0 5px #fff,
+        0 0 10px #ffb3c6,
+        0 0 20px #bde0fe
+    `;
   }
 
-  function moveEgg() {
-    const objects = document.querySelectorAll(".object");
+  objects.forEach(item => {
+    let obj = document.createElement("div");
+    obj.className = "object";
+    obj.textContent = item;
 
-    realEgg.remove();
-    let randomObj = objects[Math.floor(Math.random() * objects.length)];
-    let newEgg = document.createElement("div");
-    newEgg.className = "hiddenEgg";
-    newEgg.textContent = "🥚";
+    obj.style.top = Math.random() * (window.innerHeight - topMargin - bottomMargin - objectSize) + topMargin + "px";
+    obj.style.left = Math.random() * (window.innerWidth - leftMargin - rightMargin - objectSize) + leftMargin + "px";
+    document.body.appendChild(obj);
 
-    randomObj.appendChild(newEgg);
-    realEgg = newEgg;
+    if (item === "🐇") {
+      setInterval(() => {
+        obj.style.top = Math.random() * (window.innerHeight - topMargin - bottomMargin - objectSize) + topMargin + "px";
+        obj.style.left = Math.random() * (window.innerWidth - leftMargin - rightMargin - objectSize) + leftMargin + "px";
+      }, 1500);
+    }
+  });
 
-    setupEgg();
+  placeEgg();
+}
+
+function placeEgg() {
+  const objects = document.querySelectorAll(".object");
+  let randomObj = objects[Math.floor(Math.random() * objects.length)];
+
+  let egg = document.createElement("img");
+  egg.className = "hiddenEgg";
+  egg.src = "images/easter-egg.png";
+  egg.style.width = "40px";
+  egg.style.height = "40px";
+  egg.style.position = "absolute";
+  egg.style.top = "50%";
+  egg.style.left = "50%";
+  egg.style.transform = "translate(-50%, -50%)";
+  egg.style.opacity = "0";        
+  egg.style.pointerEvents = "none";
+  egg.style.transition = "opacity 0.2s";
+  egg.style.zIndex = "600";
+
+  randomObj.appendChild(egg);
+  realEgg = egg;
+  realEgg.onclick = nextLevel;
+
+  randomObj.addEventListener("mouseenter", () => {
+    egg.style.opacity = "1";
+    egg.style.pointerEvents = "auto";
+  });
+
+  randomObj.addEventListener("mouseleave", () => {
+    egg.style.opacity = "0";
+    egg.style.pointerEvents = "none";
+  });
+}
+
+function nextLevel() {
+  if(gameOver) return;
+
+  let time = ((Date.now() - startTime) / 1000).toFixed(2);
+  alert("🎉 Level " + level + " complete in " + time + " seconds!");
+
+  level++;
+
+  if(level > 3){
+    winScreen.style.display = "flex";
+    gameOver = true;
+    flashlight.style.display = "none";
+    return;
   }
 
-  setupEgg();
+  levelDisplay.textContent = level;
+  startTime = Date.now();
+  loadLevel();
+}
+
+document.addEventListener("mousemove", (e) => {
+  if(level === 3 && !gameOver){
+    flashlight.style.background = `radial-gradient(circle 120px at ${e.clientX}px ${e.clientY}px, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%)`;
+  }
+});
+
+function restartGame() {
+  gameOver = false;
+  level = 1;
+  levelDisplay.textContent = level;
+  winScreen.style.display = "none";
+  startTime = Date.now();
+  loadLevel();
+}
+
+loadLevel();
 </script>
 
 </body>
