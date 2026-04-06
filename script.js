@@ -3,6 +3,7 @@ const levelDisplay = document.getElementById("level");
 const flashlight = document.getElementById("flashlight");
 const winScreen = document.getElementById("winScreen");
 const title = document.getElementById("title");
+const bgMusic = document.getElementById("bg-music");
 
 let startTime = Date.now();
 let level = 1;
@@ -133,6 +134,10 @@ document.addEventListener("mousemove", (e) => {
   if(level === 3 && !gameOver){
     flashlight.style.background = `radial-gradient(circle 120px at ${e.clientX}px ${e.clientY}px, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%)`;
   }
+});
+
+window.addEventListener("load", () => {
+  bgMusic.play().catch(() => console.log("Autoplay blocked"));
 });
 
 function restartGame() {
