@@ -12,6 +12,7 @@ This game allows you to search for the hidden easter egg. The easter eggs are hi
 
 ## Level 3
 - This level has 8 items (includes the moving bunny)
+- This level is played in the dark (flashlight is enabled to help search for the easter egg)
 - Find the easter egg 🥚
 
 ## AI Usage 
